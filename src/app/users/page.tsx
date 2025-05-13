@@ -1,3 +1,4 @@
+// Users.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -124,7 +125,7 @@ export default function Users() {
         router.push("/");
         return;
       }
-      toast.error(err.response?.data?.message || "Erro ao carregar usuários");
+      toast.error("Erro ao carregar usuários");
       setUsers([]);
     } finally {
       setLoading(false);
@@ -155,6 +156,8 @@ export default function Users() {
         errors.confirmPassword = "Confirmação de senha é obrigatória";
       } else if (formData.password !== formData.confirmPassword) {
         errors.confirmPassword = "As senhas não coincidem";
+      } else {
+        toast.success("As senhas conferem!");
       }
       if (!formData.role) errors.role = "Função é obrigatória";
     } else if (formData.password) {
@@ -173,6 +176,8 @@ export default function Users() {
           errors.confirmPassword = "Confirmação de senha é obrigatória";
         } else if (formData.password !== formData.confirmPassword) {
           errors.confirmPassword = "As senhas não coincidem";
+        } else {
+          toast.success("As senhas conferem!");
         }
       }
     }
@@ -267,6 +272,9 @@ export default function Users() {
             : u
         )
       );
+      if (formData.currentPassword && formData.password) {
+        toast.success("Senha atual verificada com sucesso!");
+      }
       toast.success("Usuário atualizado com sucesso!");
       closeModal();
       fetchUsers();
@@ -285,7 +293,7 @@ export default function Users() {
           ? "Senha atual incorreta"
           : err.response?.status === 403
           ? "Você não tem permissão para realizar esta ação"
-          : err.response?.data?.message || "Erro ao atualizar usuário";
+          : "Erro ao atualizar usuário";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -426,6 +434,13 @@ export default function Users() {
                   key={user.id}
                   className="relative bg-gray-700 bg-opacity-30 backdrop-blur-lg rounded-2xl border border-gray-600 border-opacity-50 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
                 >
+                  {/* Ícone verde neon para usuário logado */}
+                  {user.id === currentUser.id && (
+                    <div
+                      className="absolute top-3 right-3 w-4 h-4 rounded-full bg-green-400 shadow-[0_0_8px_2px_rgba(0,255,128,0.8)]"
+                      title="Usuário logado"
+                    />
+                  )}
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-100 mb-3 line-clamp-2">
                       {user.name}
@@ -456,33 +471,28 @@ export default function Users() {
                       >
                         Editar
                       </button>
-                      {currentUser.role === "admin" && (
-                        <button
-                          onClick={() => {
-                            if (user.id === currentUser.id) {
-                              toast.error(
-                                "Você não pode excluir sua própria conta"
-                              );
-                              return;
+                      {currentUser.role === "admin" &&
+                        user.id !== currentUser.id && (
+                          <button
+                            onClick={() => {
+                              setUserToDelete(user);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            disabled={
+                              isSubmitting && userToDelete?.id === user.id
                             }
-                            setUserToDelete(user);
-                            setIsDeleteModalOpen(true);
-                          }}
-                          disabled={
-                            isSubmitting && userToDelete?.id === user.id
-                          }
-                          className={`flex-1 py-2 rounded-lg transition-colors cursor-pointer text-sm font-medium ${
-                            isSubmitting && userToDelete?.id === user.id
-                              ? "bg-red-400 bg-opacity-70 cursor-not-allowed"
-                              : "bg-red-600 bg-opacity-70 hover:bg-red-500 text-gray-100"
-                          }`}
-                          aria-label={`Excluir usuário ${user.name}`}
-                        >
-                          {isSubmitting && userToDelete?.id === user.id
-                            ? "Deletando..."
-                            : "Excluir"}
-                        </button>
-                      )}
+                            className={`flex-1 py-2 rounded-lg transition-colors cursor-pointer text-sm font-medium ${
+                              isSubmitting && userToDelete?.id === user.id
+                                ? "bg-red-400 bg-opacity-70 cursor-not-allowed"
+                                : "bg-red-600 bg-opacity-70 hover:bg-red-500 text-gray-100"
+                            }`}
+                            aria-label={`Excluir usuário ${user.name}`}
+                          >
+                            {isSubmitting && userToDelete?.id === user.id
+                              ? "Deletando..."
+                              : "Excluir"}
+                          </button>
+                        )}
                     </div>
                   )}
                 </div>

@@ -30,7 +30,7 @@ export const authRequest = async (config: AxiosRequestConfig = {}) => {
           .then((refreshResponse) => {
             const { access_token, refresh_token } = refreshResponse.data;
             localStorage.setItem("token", access_token);
-            // Backend should set the cookie, but keep this as fallback
+
             if (refresh_token) {
               document.cookie = `refresh_token=${refresh_token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`;
             }

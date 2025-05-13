@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import UserInfo from "@/components/UserInfo";
 import { authRequest } from "@/lib/api";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify"; // Import ToastContainer
+import "react-toastify/dist/ReactToastify.css"; // Import the CSS for toast styling
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import DeleteRequestModal from "@/components/Modal/deleteRequestModal";
 
@@ -19,7 +20,6 @@ interface UserDTO {
 interface FormData {
   name: string;
   email: string;
-  currentPassword: string;
   password: string;
   confirmPassword: string;
 }
@@ -32,7 +32,6 @@ export default function Configs() {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
-    currentPassword: "",
     password: "",
     confirmPassword: "",
   });
@@ -40,8 +39,6 @@ export default function Configs() {
     Partial<Record<keyof FormData, string>>
   >({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [showCurrentPassword, setShowCurrentPassword] =
-    useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
@@ -89,10 +86,10 @@ export default function Configs() {
       setFormData({
         name: normalizedUser.name,
         email: normalizedUser.email,
-        currentPassword: "",
         password: "",
         confirmPassword: "",
       });
+      toast.info("Dados do usuário carregados com sucesso!");
     } catch (err) {
       console.error("Erro ao parsear usuário:", err);
       toast.error("Erro ao carregar dados do usuário.");
@@ -111,16 +108,13 @@ export default function Configs() {
       errors.email = "E-mail inválido";
 
     if (formData.password || formData.confirmPassword) {
-      if (!formData.currentPassword)
-        errors.currentPassword =
-          "Senha atual é obrigatória para alterar a senha";
       const passwordRegex =
         /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}[\]:;<>,.?~/-]).{6,50}$/;
       if (!formData.password) {
         errors.password = "Nova senha é obrigatória se confirmada";
       } else if (!passwordRegex.test(formData.password)) {
         errors.password =
-          "Senha deve ter 6-50 caracteres, com letras, números e símbolos";
+          "Senha deve ter pelo menos 8 caracteres, com letras, números e símbolos";
       }
       if (!formData.confirmPassword) {
         errors.confirmPassword = "Confirmação de senha é obrigatória";
@@ -156,8 +150,8 @@ export default function Configs() {
         name: formData.name,
         email: formData.email,
       };
-      if (formData.password) {
-        data.currentPassword = formData.currentPassword;
+      const isPasswordChanged = !!formData.password;
+      if (isPasswordChanged) {
         data.password = formData.password;
       }
 
@@ -179,10 +173,13 @@ export default function Configs() {
           email: formData.email,
         })
       );
-      toast.success("Perfil atualizado com sucesso!");
+      toast.success(
+        isPasswordChanged
+          ? "Perfil e senha atualizados com sucesso!"
+          : "Perfil atualizado com sucesso!"
+      );
       setFormData((prev) => ({
         ...prev,
-        currentPassword: "",
         password: "",
         confirmPassword: "",
       }));
@@ -198,8 +195,6 @@ export default function Configs() {
       const message =
         err.response?.data?.message === "Email already in use"
           ? "Este e-mail já está em uso"
-          : err.response?.data?.message === "Current password is incorrect"
-          ? "Senha atual incorreta"
           : err.response?.status === 403
           ? "Você não tem permissão para realizar esta ação"
           : err.response?.data?.message || "Erro ao atualizar perfil";
@@ -211,11 +206,16 @@ export default function Configs() {
 
   const openDeleteRequestModal = () => {
     setIsDeleteRequestModalOpen(true);
-    toast.success("Solicitação de exclusão enviada com sucesso!");
+    toast.info("Solicitação de exclusão de dados iniciada.");
   };
 
   const closeDeleteRequestModal = () => {
     setIsDeleteRequestModalOpen(false);
+    toast.info("Solicitação de exclusão de dados cancelada.");
+  };
+
+  const handleTabChange = (tab: "profile" | "lgpd" | "about") => {
+    setActiveTab(tab);
   };
 
   const tabs = [
@@ -226,6 +226,19 @@ export default function Configs() {
 
   return (
     <div className="flex min-h-screen bg-gray-900 bg-opacity-90 text-gray-100 font-sans">
+      {/* Add ToastContainer here */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       <Sidebar />
       <main className="flex-1 p-6 md:p-10 flex flex-col items-center w-full md:ml-64">
         <div className="w-full max-w-7xl flex justify-end mb-8 md:mb-10">
@@ -244,7 +257,7 @@ export default function Configs() {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                  onClick={() => handleTabChange(tab.id as typeof activeTab)}
                   className={`px-4 py-2 text-sm md:text-base font-medium transition-colors cursor-pointer ${
                     activeTab === tab.id
                       ? "text-gray-100 border-b-2 border-gray-200"
@@ -326,55 +339,6 @@ export default function Configs() {
                   </div>
                   <div>
                     <label
-                      htmlFor="currentPassword"
-                      className="block text-sm md:text-base font-medium text-gray-300 mb-1"
-                    >
-                      Senha Atual (obrigatória para alterar senha)
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="currentPassword"
-                        type={showCurrentPassword ? "text" : "password"}
-                        name="currentPassword"
-                        value={formData.currentPassword}
-                        onChange={handleInputChange}
-                        className="w-full p-3 bg-gray-800 bg-opacity-50 border border-gray-600 border-opacity-50 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-All pr-10"
-                        aria-describedby={
-                          formErrors.currentPassword
-                            ? "currentPassword-error"
-                            : undefined
-                        }
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowCurrentPassword(!showCurrentPassword)
-                        }
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
-                        aria-label={
-                          showCurrentPassword
-                            ? "Ocultar senha atual"
-                            : "Mostrar senha atual"
-                        }
-                      >
-                        {showCurrentPassword ? (
-                          <AiOutlineEyeInvisible size={20} />
-                        ) : (
-                          <AiOutlineEye size={20} />
-                        )}
-                      </button>
-                    </div>
-                    {formErrors.currentPassword && (
-                      <p
-                        id="currentPassword-error"
-                        className="text-red-400 text-xs mt-1"
-                      >
-                        {formErrors.currentPassword}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
                       htmlFor="password"
                       className="block text-sm md:text-base font-medium text-gray-300 mb-1"
                     >
@@ -394,7 +358,9 @@ export default function Configs() {
                       />
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={() => {
+                          setShowPassword(!showPassword);
+                        }}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
                         aria-label={
                           showPassword
@@ -441,9 +407,9 @@ export default function Configs() {
                       />
                       <button
                         type="button"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
+                        onClick={() => {
+                          setShowConfirmPassword(!showConfirmPassword);
+                        }}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
                         aria-label={
                           showConfirmPassword
@@ -539,7 +505,7 @@ export default function Configs() {
                     href="mailto:suporte@going2.com"
                     className="text-blue-400 hover:underline cursor-pointer"
                   >
-                    suporte@going2.com
+                    mardenmelo@gmail.com
                   </a>
                   . Você também pode solicitar a exclusão de seus dados
                   diretamente.
