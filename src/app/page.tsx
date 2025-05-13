@@ -54,8 +54,7 @@ export default function Login() {
 
       await router.push("/dashboard");
     } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message || "Credenciais inválidas";
+      const errorMessage = "Credenciais inválidas";
       toast.error(errorMessage, {
         position: "top-right",
         autoClose: 3000,
