@@ -7,6 +7,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { FiHome, FiMenu, FiSettings, FiX } from "react-icons/fi";
 import { PiUsersFour } from "react-icons/pi";
 import { toast } from "react-toastify";
+import { authRequest } from "@/lib/api";
 
 interface UserDTO {
   id: string;
@@ -66,11 +67,30 @@ export default function Sidebar() {
     item.restrictedTo ? item.restrictedTo.includes(userRole || "") : true
   );
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    toast.success("Logout realizado com sucesso!");
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      await authRequest({
+        method: "POST",
+        url: "/auth/logout",
+      });
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      document.cookie =
+        "refresh_token=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0";
+      toast.success("Logout realizado com sucesso!", {
+        position: "top-right",
+        autoClose: 3000,
+        theme: "dark",
+      });
+      router.push("/");
+    } catch (err: any) {
+      toast.error("Erro ao fazer logout.", {
+        position: "top-right",
+        autoClose: 3000,
+        theme: "dark",
+      });
+      console.error(err);
+    }
   };
 
   const toggleMenu = () => {

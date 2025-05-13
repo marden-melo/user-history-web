@@ -38,8 +38,9 @@ export default function Login() {
       const { access_token, refresh_token, user } = response.data;
 
       localStorage.setItem("token", access_token);
-      localStorage.setItem("refresh_token", refresh_token);
       localStorage.setItem("user", JSON.stringify(user));
+
+      document.cookie = `refresh_token=${refresh_token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`;
 
       toast.success("Login bem-sucedido! Entrando no painel...", {
         position: "top-right",

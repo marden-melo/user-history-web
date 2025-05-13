@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import UserInfo from "@/components/UserInfo";
 import { authRequest } from "@/lib/api";
 import { toast } from "react-toastify";
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import EditUserModal from "@/components/Modal/editUserModal";
+import DeleteUserModal from "@/components/Modal/deleteUserModal";
 
 interface User {
   id: string;
@@ -52,16 +53,6 @@ export default function Users() {
     Partial<Record<keyof FormData, string>>
   >({});
   const router = useRouter();
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  const labels: Record<keyof FormData, string> = {
-    name: "Nome",
-    email: "E-mail",
-    currentPassword: "Senha Atual",
-    password: "Nova Senha",
-    confirmPassword: "Confirmar Nova Senha",
-    role: "Função",
-  };
 
   const isLocalStorageAvailable = () => {
     try {
@@ -150,20 +141,12 @@ export default function Users() {
       errors.email = "E-mail inválido";
 
     if (!selectedUser) {
+      // Novo usuário
       if (!formData.password)
         errors.password = "Senha é obrigatória para novos usuários";
-      if (!formData.role) errors.role = "Função é obrigatória";
-    }
-
-    if (formData.password && currentUser?.role !== "admin") {
-      if (selectedUser && !formData.currentPassword)
-        errors.currentPassword =
-          "Senha atual é obrigatória para alterar a senha";
       const passwordRegex =
         /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}[\]:;<>,.?~/-]).{6,50}$/;
-      if (!formData.password) {
-        errors.password = "Nova senha é obrigatória se confirmada";
-      } else if (!passwordRegex.test(formData.password)) {
+      if (formData.password && !passwordRegex.test(formData.password)) {
         errors.password =
           "Senha deve ter 6-50 caracteres, com letras, números e símbolos";
       }
@@ -172,12 +155,24 @@ export default function Users() {
       } else if (formData.password !== formData.confirmPassword) {
         errors.confirmPassword = "As senhas não coincidem";
       }
-    } else if (formData.password && currentUser?.role === "admin") {
+      if (!formData.role) errors.role = "Função é obrigatória";
+    } else if (formData.password) {
+      // Edição de usuário com alteração de senha
       const passwordRegex =
         /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}[\]:;<>,.?~/-]).{6,50}$/;
       if (!passwordRegex.test(formData.password)) {
         errors.password =
           "Senha deve ter 6-50 caracteres, com letras, números e símbolos";
+      }
+      if (currentUser?.role !== "admin") {
+        if (!formData.currentPassword)
+          errors.currentPassword =
+            "Senha atual é obrigatória para alterar a senha";
+        if (!formData.confirmPassword) {
+          errors.confirmPassword = "Confirmação de senha é obrigatória";
+        } else if (formData.password !== formData.confirmPassword) {
+          errors.confirmPassword = "As senhas não coincidem";
+        }
       }
     }
 
@@ -329,7 +324,8 @@ export default function Users() {
     }
   };
 
-  const saveUser = async () => {
+  const saveUser = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (selectedUser) {
       await updateUser();
     } else {
@@ -387,24 +383,6 @@ export default function Users() {
     setFormData((prev) => ({ ...prev, [name]: value }));
     setFormErrors((prev) => ({ ...prev, [name]: undefined }));
   };
-
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      closeModal();
-      closeDeleteModal();
-    }
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && (isModalOpen || isDeleteModalOpen)) {
-        closeModal();
-        closeDeleteModal();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isModalOpen, isDeleteModalOpen]);
 
   if (!currentUser) return null;
 
@@ -512,302 +490,31 @@ export default function Users() {
           )}
         </div>
 
-        {isModalOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50"
-            onClick={handleOverlayClick}
-          >
-            <div
-              ref={modalRef}
-              className="relative bg-gray-700 bg-opacity-30 backdrop-blur-lg rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-600 border-opacity-50 shadow-2xl"
-            >
-              <h2 className="text-2xl font-semibold text-gray-100 mb-6 text-center">
-                {selectedUser ? "Editar Usuário" : "Novo Usuário"}
-              </h2>
-              <form
-                className="space-y-5"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  saveUser();
-                }}
-              >
-                {Object.entries(formData).map(([key, value]) => {
-                  if (
-                    (key === "currentPassword" || key === "confirmPassword") &&
-                    selectedUser &&
-                    currentUser?.role === "admin"
-                  ) {
-                    return null; // Oculta currentPassword e confirmPassword para admin
-                  }
-                  return (
-                    <div key={key} className="w-full">
-                      <label className="block text-sm font-medium text-gray-300 mb-1">
-                        {labels[key as keyof FormData]}
-                        {key === "password" && selectedUser && " (opcional)"}
-                      </label>
-                      {key === "role" ? (
-                        currentUser?.role === "admin" ? (
-                          <select
-                            name={key}
-                            value={value}
-                            onChange={handleInputChange}
-                            className="w-full p-3 bg-gray-800 bg-opacity-50 border border-gray-600 border-opacity-50 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all text-base"
-                            required={!selectedUser}
-                            aria-describedby={
-                              formErrors[key] ? `${key}-error` : undefined
-                            }
-                          >
-                            <option value="">Selecione...</option>
-                            <option value="admin">Administrador</option>
-                            <option value="manager">Gerente</option>
-                            <option value="user">Usuário</option>
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            value={value}
-                            readOnly
-                            className="w-full p-3 bg-gray-800 bg-opacity-50 border border-gray-600 border-opacity-50 rounded-lg text-gray-100 text-base"
-                          />
-                        )
-                      ) : key === "name" ? (
-                        <div>
-                          <input
-                            type="text"
-                            name={key}
-                            value={value}
-                            onChange={handleInputChange}
-                            className="w-full p-3 bg-gray-800 bg-opacity-50 border border-gray-600 border-opacity-50 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all text-base"
-                            required
-                            aria-describedby={
-                              formErrors[key] ? `${key}-error` : undefined
-                            }
-                          />
-                          {formErrors[key] && (
-                            <p
-                              className="text-red-400 text-xs mt-1"
-                              id={`${key}-error`}
-                            >
-                              {formErrors[key]}
-                            </p>
-                          )}
-                        </div>
-                      ) : key === "email" ? (
-                        <div>
-                          <input
-                            type="email"
-                            name={key}
-                            value={value}
-                            onChange={handleInputChange}
-                            className="w-full p-3 bg-gray-800 bg-opacity-50 border border-gray-600 border-opacity-50 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all text-base"
-                            required
-                            aria-describedby={
-                              formErrors[key] ? `${key}-error` : undefined
-                            }
-                          />
-                          {formErrors[key] && (
-                            <p
-                              className="text-red-400 text-xs mt-1"
-                              id={`${key}-error`}
-                            >
-                              {formErrors[key]}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="relative">
-                          <input
-                            type={
-                              key === "currentPassword"
-                                ? showCurrentPassword
-                                  ? "text"
-                                  : "password"
-                                : key === "password"
-                                ? showPassword
-                                  ? "text"
-                                  : "password"
-                                : showConfirmPassword
-                                ? "text"
-                                : "password"
-                            }
-                            name={key}
-                            value={value}
-                            onChange={handleInputChange}
-                            className="w-full p-3 bg-gray-800 bg-opacity-50 border border-gray-600 border-opacity-50 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all text-base pr-10"
-                            required={key === "password" && !selectedUser}
-                            aria-describedby={
-                              formErrors[key] ? `${key}-error` : undefined
-                            }
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              key === "currentPassword"
-                                ? setShowCurrentPassword(!showCurrentPassword)
-                                : key === "password"
-                                ? setShowPassword(!showPassword)
-                                : setShowConfirmPassword(!showConfirmPassword)
-                            }
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
-                            aria-label={
-                              (key === "currentPassword" &&
-                                showCurrentPassword) ||
-                              (key === "password" && showPassword) ||
-                              (key === "confirmPassword" && showConfirmPassword)
-                                ? `Ocultar ${labels[key]}`
-                                : `Mostrar ${labels[key]}`
-                            }
-                          >
-                            {(key === "currentPassword" &&
-                              showCurrentPassword) ||
-                            (key === "password" && showPassword) ||
-                            (key === "confirmPassword" &&
-                              showConfirmPassword) ? (
-                              <AiOutlineEyeInvisible size={20} />
-                            ) : (
-                              <AiOutlineEye size={20} />
-                            )}
-                          </button>
-                          {formErrors[key] && (
-                            <p
-                              className="text-red-400 text-xs mt-1"
-                              id={`${key}-error`}
-                            >
-                              {formErrors[key]}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                <div className="flex flex-col sm:flex-row gap-4 mt-6">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`flex-1 py-3 rounded-lg transition-all shadow-md flex items-center justify-center cursor-pointer text-base ${
-                      isSubmitting
-                        ? "bg-gray-600 bg-opacity-50 cursor-not-allowed"
-                        : "bg-gray-600 bg-opacity-70 hover:bg-gray-500 text-gray-100"
-                    }`}
-                    aria-busy={isSubmitting}
-                    aria-label={
-                      selectedUser ? "Atualizar usuário" : "Criar usuário"
-                    }
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <svg
-                          className="animate-spin h-5 w-5 mr-2 text-gray-100"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v8h-8z"
-                          />
-                        </svg>
-                        {selectedUser ? "Atualizando..." : "Cadastrando..."}
-                      </>
-                    ) : (
-                      "Salvar"
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="flex-1 py-3 rounded-lg bg-gray-600 bg-opacity-70 hover:bg-gray-700 transition-all shadow-md cursor-pointer text-base text-gray-100"
-                    aria-label="Cancelar"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        <EditUserModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onSubmit={saveUser}
+          formData={formData}
+          formErrors={formErrors}
+          handleInputChange={handleInputChange}
+          selectedUser={selectedUser}
+          currentUser={currentUser}
+          isSubmitting={isSubmitting}
+          showCurrentPassword={showCurrentPassword}
+          setShowCurrentPassword={setShowCurrentPassword}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          showConfirmPassword={showConfirmPassword}
+          setShowConfirmPassword={setShowConfirmPassword}
+        />
 
-        {isDeleteModalOpen && userToDelete && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50"
-            onClick={handleOverlayClick}
-          >
-            <div
-              ref={modalRef}
-              className="relative bg-gray-700 bg-opacity-30 backdrop-blur-lg rounded-2xl p-6 w-full max-w-md border border-gray-600 border-opacity-50 shadow-2xl"
-            >
-              <h2 className="text-2xl font-semibold text-gray-100 mb-6 text-center">
-                Confirmar Exclusão
-              </h2>
-              <p className="text-gray-300 text-center mb-6">
-                Tem certeza que deseja excluir o usuário{" "}
-                <span className="font-medium text-gray-100">
-                  {userToDelete.name}
-                </span>
-                ?
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  type="button"
-                  onClick={deleteUser}
-                  disabled={isSubmitting}
-                  className={`flex-1 py-3 rounded-lg transition-all shadow-md cursor-pointer text-base ${
-                    isSubmitting
-                      ? "bg-red-400 bg-opacity-70 cursor-not-allowed"
-                      : "bg-red-600 bg-opacity-70 hover:bg-red-500 text-gray-100"
-                  }`}
-                  aria-label={`Confirmar exclusão de ${userToDelete.name}`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg
-                        className="animate-spin h-5 w-5 mr-2 text-gray-100"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v8h-8z"
-                        />
-                      </svg>
-                      Deletando...
-                    </>
-                  ) : (
-                    "Confirmar"
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={closeDeleteModal}
-                  className="flex-1 py-3 rounded-lg bg-gray-600 bg-opacity-70 hover:bg-gray-700 transition-all shadow-md cursor-pointer text-base text-gray-100"
-                  aria-label="Cancelar exclusão"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <DeleteUserModal
+          isOpen={isDeleteModalOpen}
+          onClose={closeDeleteModal}
+          onDelete={deleteUser}
+          user={userToDelete}
+          isSubmitting={isSubmitting}
+        />
       </main>
       <style jsx>{`
         @keyframes fade-in {

@@ -10,7 +10,7 @@ interface User {
   role: string;
 }
 
-const UserInfo: React.FC = () => {
+const UserInfo = () => {
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
@@ -22,12 +22,6 @@ const UserInfo: React.FC = () => {
       router.push("/");
     }
   }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    router.push("/");
-  };
 
   if (!user) {
     return <p className="text-gray-400">Carregando usuário...</p>;
@@ -44,12 +38,6 @@ const UserInfo: React.FC = () => {
         <p className="text-white font-medium">{user.name}</p>
         <p className="text-gray-400 text-sm">{user.email}</p>
       </div>
-      <button
-        onClick={handleLogout}
-        className="ml-4 bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700 transition-all duration-300 cursor-pointer"
-      >
-        Sair
-      </button>
     </div>
   );
 };
