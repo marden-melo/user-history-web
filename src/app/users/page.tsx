@@ -61,6 +61,7 @@ export default function Users() {
       localStorage.removeItem(test);
       return true;
     } catch (e) {
+      console.log(e);
       return false;
     }
   };

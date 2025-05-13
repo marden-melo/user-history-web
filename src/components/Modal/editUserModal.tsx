@@ -100,7 +100,7 @@ export default function EditUserModal({
           {selectedUser ? "Editar Usuário" : "Novo Usuário"}
         </h2>
         <form className="space-y-5" onSubmit={onSubmit}>
-          {Object.entries(formData).map(([key, value]) => {
+          {(Object.keys(formData) as Array<keyof FormData>).map((key) => {
             if (
               key === "currentPassword" &&
               (!selectedUser || currentUser?.role === "admin")
@@ -116,15 +116,19 @@ export default function EditUserModal({
             }
             return (
               <div key={key} className="w-full">
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  {labels[key as keyof FormData]}
+                <label
+                  htmlFor={key}
+                  className="block text-sm font-medium text-gray-300 mb-1"
+                >
+                  {labels[key]}
                   {key === "password" && selectedUser && " (opcional)"}
                 </label>
                 {key === "role" ? (
                   currentUser?.role === "admin" ? (
                     <select
+                      id={key}
                       name={key}
-                      value={value}
+                      value={formData[key]}
                       onChange={handleInputChange}
                       className="w-full p-3 bg-gray-800 bg-opacity-50 border border-gray-600 border-opacity-50 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all text-base"
                       required={!selectedUser}
@@ -140,17 +144,21 @@ export default function EditUserModal({
                   ) : (
                     <input
                       type="text"
-                      value={value}
+                      value={formData[key]}
                       readOnly
                       className="w-full p-3 bg-gray-800 bg-opacity-50 border border-gray-600 border-opacity-50 rounded-lg text-gray-100 text-base"
+                      aria-describedby={
+                        formErrors[key] ? `${key}-error` : undefined
+                      }
                     />
                   )
                 ) : key === "name" ? (
                   <div>
                     <input
+                      id={key}
                       type="text"
                       name={key}
-                      value={value}
+                      value={formData[key]}
                       onChange={handleInputChange}
                       className="w-full p-3 bg-gray-800 bg-opacity-50 border border-gray-600 border-opacity-50 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all text-base"
                       required
@@ -170,9 +178,10 @@ export default function EditUserModal({
                 ) : key === "email" ? (
                   <div>
                     <input
+                      id={key}
                       type="email"
                       name={key}
-                      value={value}
+                      value={formData[key]}
                       onChange={handleInputChange}
                       className="w-full p-3 bg-gray-800 bg-opacity-50 border border-gray-600 border-opacity-50 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all text-base"
                       required
@@ -192,6 +201,7 @@ export default function EditUserModal({
                 ) : (
                   <div className="relative">
                     <input
+                      id={key}
                       type={
                         key === "currentPassword"
                           ? showCurrentPassword
@@ -206,7 +216,7 @@ export default function EditUserModal({
                           : "password"
                       }
                       name={key}
-                      value={value}
+                      value={formData[key]}
                       onChange={handleInputChange}
                       className="w-full p-3 bg-gray-800 bg-opacity-50 border border-gray-600 border-opacity-50 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all text-base pr-10"
                       required={key === "password" && !selectedUser}

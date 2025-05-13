@@ -75,6 +75,7 @@ export default function Dashboard() {
         };
         setStats(stats);
       } catch (err: any) {
+        console.log(err);
         const errorMessage = "Erro ao carregar estatísticas";
         setError(errorMessage);
       } finally {

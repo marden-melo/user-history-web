@@ -7,6 +7,7 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import api from "@/lib/api";
+import Link from "next/link";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -27,10 +28,6 @@ export default function ResetPassword() {
       toast.error("Token inválido ou ausente. Redirecionando para login...", {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
         theme: "dark",
       });
       setTimeout(() => router.push("/"), 3000);
@@ -60,10 +57,6 @@ export default function ResetPassword() {
       toast.error("Por favor, corrija os erros no formulário", {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
         theme: "dark",
       });
     }
@@ -87,10 +80,6 @@ export default function ResetPassword() {
         {
           position: "top-right",
           autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
           theme: "dark",
         }
       );
@@ -103,19 +92,10 @@ export default function ResetPassword() {
       toast.error(errorMessage, {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
         theme: "dark",
       });
-      console.error(err);
-      if (
-        errorMessage.includes("Token inválido") ||
-        errorMessage.includes("expirado")
-      ) {
-        setTimeout(() => router.push("/"), 3000);
-      }
+      console.error("Erro ao redefinir senha:", err);
+      setTimeout(() => router.push("/"), 3000);
     } finally {
       setIsLoading(false);
     }
@@ -270,12 +250,12 @@ export default function ResetPassword() {
           <div className="mt-6 text-center">
             <p className="text-[#f5f5f5]/80 text-sm">
               Voltar para{" "}
-              <a
-                href="/login"
+              <Link
+                href="/"
                 className="text-green-500 hover:text-green-400 transition-colors"
               >
                 Login
-              </a>
+              </Link>
             </p>
           </div>
         </div>
