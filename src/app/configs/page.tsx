@@ -553,10 +553,7 @@ export default function Configs() {
                 </ul>
                 <p className="text-base md:text-lg text-gray-400">
                   Para suporte ou feedback, envie um e-mail para{" "}
-                  <a
-                    href="mailto:mardenmelo@gmail.com"
-                    className="text-blue-400 hover:underline cursor-pointer"
-                  >
+                  <a className="text-blue-400 hover:underline cursor-pointer">
                     mardenmelo@gmail.com
                   </a>
                   .
