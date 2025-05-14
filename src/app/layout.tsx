@@ -10,8 +10,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "PAINEL TV ITAJUBÁ",
-  description: "Painel de Gestão da TV Itajubá",
+  title: "USER HISTORY",
+  description: "Painel de Gestão USERHISTORY",
 };
 
 export default function RootLayout({

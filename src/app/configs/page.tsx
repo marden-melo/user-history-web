@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import UserInfo from "@/components/UserInfo";
 import { authRequest } from "@/lib/api";
-import { toast, ToastContainer } from "react-toastify"; // Import ToastContainer
-import "react-toastify/dist/ReactToastify.css"; // Import the CSS for toast styling
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import DeleteRequestModal from "@/components/Modal/deleteRequestModal";
 
@@ -226,7 +226,6 @@ export default function Configs() {
 
   return (
     <div className="flex min-h-screen bg-gray-900 bg-opacity-90 text-gray-100 font-sans">
-      {/* Add ToastContainer here */}
       <ToastContainer
         position="top-right"
         autoClose={5000}

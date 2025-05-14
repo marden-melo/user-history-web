@@ -224,7 +224,6 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Modal de Redefinição de Senha */}
       {isModalOpen && (
         <div
           className="fixed inset-0 flex items-center justify-center z-50 bg-black/60 transition-opacity duration-300"

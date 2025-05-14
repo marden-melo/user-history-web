@@ -1,4 +1,3 @@
-// Users.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -161,7 +160,6 @@ export default function Users() {
       }
       if (!formData.role) errors.role = "Função é obrigatória";
     } else if (formData.password) {
-      // Edição de usuário com alteração de senha
       const passwordRegex =
         /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}[\]:;<>,.?~/-]).{6,50}$/;
       if (!passwordRegex.test(formData.password)) {

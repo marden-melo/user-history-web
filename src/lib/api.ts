@@ -1,8 +1,6 @@
-// lib/api.ts
 import axios, { AxiosRequestConfig } from "axios";
 import { toast } from "react-toastify";
 
-// Singleton to prevent concurrent refresh attempts
 let refreshPromise: Promise<any> | null = null;
 
 const api = axios.create({
@@ -46,7 +44,7 @@ export const authRequest = async (config: AxiosRequestConfig = {}) => {
               autoClose: 3000,
               theme: "dark",
             });
-            // Use router in a client component context or fallback
+
             setTimeout(() => (window.location.href = "/"), 3000);
             throw refreshErr;
           })
